@@ -1,0 +1,17 @@
+body { 
+    font-family: 'Cardo', serif; }
+    .display-font { font-family: 'Cormorant Garamond', 'Cardo', serif; }
+    .hero-height { height: calc(92 * min(var(--vh, 1vh), 1vh)); min-height: 520px; }
+    .attend-input:checked + label {
+        border-color: #8a6d4a;
+        background: #8a6d4a;
+        color: #fff9f2;
+        box-shadow: 0 6px 18px rgba(138,109,74,0.28);
+    }
+    .attend-input:focus-visible + label { outline: 2px solid #8a6d4a; outline-offset: 2px; }
+    .fade-up { animation: fadeUp 0.8s ease both; }
+    
+    @keyframes fadeUp { from { opacity:0; transform: translateY(16px);} to {opacity:1; transform:none;} }
+    .divider-ornament::before, .divider-ornament::after {
+        content: ""; height:1px; flex:1; background: linear-gradient(to right, transparent, #c9b79c, transparent);
+}

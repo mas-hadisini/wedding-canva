@@ -1,12 +1,14 @@
 <!doctype html>
 <html lang="id">
-<head><script>window["__codeletBootstrap__"]=JSON.parse('{"A":"A","B":"20260703-05-6766c4c"}');</script><script src="/_sdk/f432b76fb310b513.telemetry_sdk.js" integrity="sha512-9FJQ55EKmmqhyyik8BhrMVfm0+iYYfb8uOlRsjtkxJMEI97qOVEI4PnHohDjQAtvAep0IOEpdQ64eki0sz62ug=="></script>
+<head>
+    <script>window["__codeletBootstrap__"]=JSON.parse('{"A":"A","B":"20260703-05-6766c4c"}');</script>
+    <script src="/_sdk/f432b76fb310b513.telemetry_sdk.js" integrity="sha512-9FJQ55EKmmqhyyik8BhrMVfm0+iYYfb8uOlRsjtkxJMEI97qOVEI4PnHohDjQAtvAep0IOEpdQ64eki0sz62ug=="></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Undangan Pernikahan &amp; RSVP</title>
 <script src="https://cdn.tailwindcss.com/3.4.17"></script>
 <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
-<script src="/_sdk/0179d719c431a79e.data_sdk.js" integrity="sha512-OsRvJkI5GkC3MJQcgotQYotpzrMSX415GiKKgvYdxQEEkzD/fdchShO2FMSy0PJr/tiINMXOk5Vl2zAgg6bUiA=="></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cardo:ital,wght@0,400;0,700;1,400&amp;family=Cormorant+Garamond:wght@400;500;600&amp;display=swap" rel="stylesheet">
 <style>
 body { font-family: 'Cardo', serif; }
@@ -114,159 +116,6 @@ body { font-family: 'Cardo', serif; }
 </article>
 </template>
 <script src="/_sdk/e063511df281944a.editing_sdk.js" integrity="sha512-Xa8p4aPfoMxVnzxQE2WAG0FfoaPLxdjOJMfUZGm1yZosJTYmnNDvgLkJ2EoN0i3zxjeQVAzUMSXNvTKQVqbXyQ=="></script>
-<script>
-    lucide.createIcons();
-
-    const MAX_GUESTS = 4;
-    let guestCount = 1;
-    let currentData = [];
-    let isSending = false;
-
-    const form = document.getElementById('rsvp-form');
-    const nameInput = document.getElementById('guest-name');
-    const commentInput = document.getElementById('guest-comment');
-    const guestBlock = document.getElementById('guest-count-block');
-    const guestValueEl = document.getElementById('guest-count-value');
-    const errorEl = document.getElementById('form-error');
-    const successEl = document.getElementById('form-success');
-    const submitBtn = document.getElementById('submit-btn');
-    const submitDefault = document.querySelector('[data-template-id="submit-button"]');
-    const submitSending = document.querySelector('[data-template-id="submit-sending"]');
-
-    // Attendance toggle -> guest count visibility
-    document.querySelectorAll('input[name="attendance"]').forEach(radio => {
-    radio.addEventListener('change', () => {
-        if (radio.value === 'hadir' && radio.checked) {
-        guestBlock.classList.remove('hidden');
-        } else {
-        guestBlock.classList.add('hidden');
-        }
-    });
-    });
-
-    // Guest count stepper
-    function updateGuestDisplay() { guestValueEl.textContent = String(guestCount); }
-    document.getElementById('guest-minus').addEventListener('click', () => {
-    if (guestCount > 1) { guestCount--; updateGuestDisplay(); }
-    });
-    document.getElementById('guest-plus').addEventListener('click', () => {
-    if (guestCount < MAX_GUESTS) { guestCount++; updateGuestDisplay(); }
-    });
-
-    function showError(msg) {
-    errorEl.textContent = msg;
-    errorEl.classList.remove('hidden');
-    }
-    function clearMessages() {
-    errorEl.classList.add('hidden');
-    successEl.classList.add('hidden');
-    }
-
-    function setSending(state) {
-    isSending = state;
-    submitBtn.disabled = state;
-    if (state) {
-        submitDefault.classList.add('hidden');
-        submitSending.classList.remove('hidden');
-        submitSending.classList.add('flex');
-    } else {
-        submitDefault.classList.remove('hidden');
-        submitSending.classList.add('hidden');
-        submitSending.classList.remove('flex');
-    }
-    }
-
-    form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (isSending) return;
-    clearMessages();
-
-    const name = nameInput.value.trim();
-    const attendance = (document.querySelector('input[name="attendance"]:checked') || {}).value;
-
-    if (!name) { showError('Mohon isi nama Anda terlebih dahulu.'); return; }
-    if (!attendance) { showError('Mohon pilih kehadiran Anda.'); return; }
-
-    if (currentData.length >= 999) {
-        showError('Maaf, buku tamu sudah penuh (maksimum tercapai).');
-        return;
-    }
-
-    const record = {
-        guest_name: name,
-        attendance: attendance,
-        guest_count: attendance === 'hadir' ? guestCount : 0,
-        comment: commentInput.value.trim(),
-        created_at: new Date().toISOString()
-    };
-
-    setSending(true);
-    const result = await window.dataSdk.create(record);
-    setSending(false);
-
-    if (result.isOk) {
-        form.reset();
-        guestCount = 1;
-        updateGuestDisplay();
-        guestBlock.classList.add('hidden');
-        successEl.textContent = 'Terima kasih! Ucapan Anda telah terkirim.';
-        successEl.classList.remove('hidden');
-    } else {
-        showError('Terjadi kesalahan saat mengirim. Silakan coba lagi.');
-    }
-    });
-
-    // ---- Data SDK ----
-    function createWishCard(record) {
-    const tpl = document.getElementById('wish-card-template');
-    const node = tpl.content.cloneNode(true);
-    const el = node.querySelector('[data-template-id="wish-card"]');
-    el.dataset.backendId = record.__backendId;
-    el.querySelector('[data-template-id="wish-card-name"]').textContent = record.guest_name || '';
-    const commentEl = el.querySelector('[data-template-id="wish-card-comment"]');
-    commentEl.textContent = record.comment && record.comment.trim() ? record.comment : '—';
-    return el;
-    }
-
-    const dataHandler = {
-    onDataChanged(data) {
-        currentData = data.slice().sort((a, b) => {
-        const ta = a.created_at || '', tb = b.created_at || '';
-        return tb.localeCompare(ta);
-        });
-
-        const list = document.getElementById('wishes-list');
-        const emptyEl = document.querySelector('[data-template-id="wishes-empty"]');
-
-        emptyEl.style.display = currentData.length === 0 ? '' : 'none';
-
-        const existing = new Map([...list.children].map(el => [el.dataset.backendId, el]));
-
-        // Rebuild order by appending in sorted sequence, reusing nodes
-        currentData.forEach(record => {
-        let el = existing.get(record.__backendId);
-        if (el) {
-            el.querySelector('[data-template-id="wish-card-name"]').textContent = record.guest_name || '';
-            const c = el.querySelector('[data-template-id="wish-card-comment"]');
-            c.textContent = record.comment && record.comment.trim() ? record.comment : '—';
-            existing.delete(record.__backendId);
-            list.appendChild(el); // reorder
-        } else {
-            list.appendChild(createWishCard(record));
-        }
-        });
-
-        existing.forEach(el => el.remove());
-        lucide.createIcons();
-    }
-    };
-
-    (async () => {
-    const init = await window.dataSdk.init(dataHandler);
-    if (!init.isOk) {
-        showError('Tidak dapat memuat buku tamu saat ini.');
-    }
-    })();
-</script>
+<script src="script.js"></script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1645e0f65a555d8',t:'MTc4MzIzMzUxMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
